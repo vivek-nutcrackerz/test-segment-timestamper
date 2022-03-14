@@ -31,7 +31,7 @@ function updateStreamStamps() {
         lastKnownSegment = currentSegment.uri;
         timeMaps[lastKnownSegment] = (new Date()).getTime() ;
         if(segmentsMapped < MAX_SEGMENTS_TO_MAP ) 
-         setTimeout(updateStreamStamps, currentSegment.targetDuration * 1000 - 250); 
+         setTimeout(updateStreamStamps, currentSegment.targetDuration * 1000); 
         else {
           console.log(JSON.stringify(timeMaps));
           process.exit();
