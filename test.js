@@ -12,7 +12,8 @@ var timeMaps = {
 // the further segments after that can be marked by using previous segment's time.
 const MAX_SEGMENTS_TO_MAP = 5;  
 const REQUEST_AHEAD_TIME = 250; // milliseconds
-var secondSegmentStartTime = 0;
+var secondSegmentNoted = false;
+var lastSegmentDuration = 0;
 var segmentsMapped = 0;
 
 function updateStreamStamps() {
@@ -39,13 +40,14 @@ function updateStreamStamps() {
       else {
         const currentSegment = playlist.segments.slice(-1)[0];  // Get the last segment from the playlist - this is our current reference point to start with. 
                                                                 // noting previous segments will be of no use 
+        var lastSegmentTime = timeMaps[lastKnownSegment];
         lastKnownSegment = currentSegment.uri;
-        if(secondSegmentStartTime == 0){
+        if(secondSegmentNoted){
           timeMaps[lastKnownSegment] = (new Date()).getTime() ;   // Note time for second segment - our base time that will be used for time calc of other segments.
-          secondSegmentStartTime = timeMaps[lastKnownSegment];
+          secondSegmentNoted = true;
         }
         else {
-          timeMaps[lastKnownSegment] = currentSegment.targetDuration * 1000 + secondSegmentStartTime; // millis
+          timeMaps[lastKnownSegment] = lastSegmentDuration + lastSegmentTime; // millis
         }
         if(segmentsMapped < MAX_SEGMENTS_TO_MAP ) 
           setTimeout(updateStreamStamps, currentSegment.targetDuration * 1000 - REQUEST_AHEAD_TIME); 
@@ -54,6 +56,7 @@ function updateStreamStamps() {
           process.exit(); // This is test program so we dont want this to run for ever. YOu can change the behavior to run forever printing the timemap as its noted.
         }
         segmentsMapped++;
+        lastSegmentDuration = currentSegment.targetDuration * 1000;
       }
     }
   }
