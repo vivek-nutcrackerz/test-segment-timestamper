@@ -1,6 +1,6 @@
 const HLS = require('hls-parser');
 var request = require('sync-request')
-var lastKnownSegment = -1;
+var lastKnownSegment = undefined;
 var timeMaps = {
   // contains {segment_name/url: time} pairs 
   // time = 0 is reference to first segment seen by this app.
@@ -27,7 +27,7 @@ function updateStreamStamps() {
     // randomly given/provided by a client or some other subsystem not under our control.
   } else {
     // Media playlist
-    if(lastKnownSegment === -1) {   // Identifying first entry segment 
+    if(lastKnownSegment === undefined) {   // Identifying first entry segment 
       lastKnownSegment = playlist.segments.slice(-1)[0].uri;
       timeMaps[lastKnownSegment] = 0 ;      // THis segment might have been available well before we found it
       setTimeout(updateStreamStamps, 0);    // We poll continuously to get the second segment , so that it is as accurate as possible.
@@ -42,7 +42,7 @@ function updateStreamStamps() {
                                                                 // noting previous segments will be of no use 
         var lastSegmentTime = timeMaps[lastKnownSegment];
         lastKnownSegment = currentSegment.uri;
-        if(secondSegmentNoted){
+        if(!secondSegmentNoted){
           timeMaps[lastKnownSegment] = (new Date()).getTime() ;   // Note time for second segment - our base time that will be used for time calc of other segments.
           secondSegmentNoted = true;
         }
@@ -50,13 +50,13 @@ function updateStreamStamps() {
           timeMaps[lastKnownSegment] = lastSegmentDuration + lastSegmentTime; // millis
         }
         if(segmentsMapped < MAX_SEGMENTS_TO_MAP ) 
-          setTimeout(updateStreamStamps, currentSegment.targetDuration * 1000 - REQUEST_AHEAD_TIME); 
+          setTimeout(updateStreamStamps, currentSegment.duration * 1000 - REQUEST_AHEAD_TIME); 
         else {
           console.log(JSON.stringify(timeMaps));
           process.exit(); // This is test program so we dont want this to run for ever. YOu can change the behavior to run forever printing the timemap as its noted.
         }
         segmentsMapped++;
-        lastSegmentDuration = currentSegment.targetDuration * 1000;
+        lastSegmentDuration = currentSegment.duration * 1000;
       }
     }
   }
